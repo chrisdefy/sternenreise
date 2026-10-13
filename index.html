@@ -1,0 +1,1108 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root { color-scheme: light; }
+body { margin: 0; }
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+</style>
+<title>Sternenreise</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400..800&family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400..600&display=swap">
+<style>
+/* Layout: eine Bühne mit WebGL-Galaxie, darüber Kapiteltitel und Steuerung; bewusst nur ein dunkler Look (Weltraum). */
+:root {
+  --font-display: "Unbounded", "Arial Black", system-ui, sans-serif;
+  --font-body: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "DM Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --void: #04050c;
+  --ink: #eceeff;
+  --muted: #98a1c8;
+  --line: #1c2040;
+  --core: #ffb36b;
+  --cyan: #46e3ff;
+  --magenta: #ff3d8b;
+  --violet: #7c5cff;
+  color-scheme: dark;
+}
+body {
+  background: var(--void);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.55;
+  padding-inline: 16px;
+  padding-block: 28px 56px;
+}
+.page { max-width: 1180px; margin-inline: auto; display: grid; gap: 22px; }
+.head { display: grid; gap: 10px; }
+h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2rem, 6vw, 3.6rem);
+  line-height: 1.02;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+.lede { margin: 0; max-width: 60ch; color: var(--muted); font-size: 1.04rem; text-wrap: pretty; }
+
+.stage {
+  position: relative;
+  height: clamp(460px, 80vh, 860px);
+  background: var(--void);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  overflow: hidden;
+  isolation: isolate;
+}
+.stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+#gl { cursor: grab; touch-action: pan-y; }
+#gl:active { cursor: grabbing; }
+#fx { pointer-events: none; z-index: 1; }
+.vignette { position: absolute; inset: 0; z-index: 2; pointer-events: none; background: radial-gradient(ellipse at center, transparent 52%, rgba(2, 3, 10, 0.62) 100%); }
+#flash { position: absolute; inset: 0; z-index: 7; pointer-events: none; background: #fff6e6; opacity: 0; }
+
+.chapter { position: absolute; z-index: 3; left: 24px; bottom: 24px; max-width: min(560px, calc(100% - 48px)); display: grid; gap: 10px; pointer-events: none; text-shadow: 0 2px 28px rgba(0, 0, 0, 0.7); }
+.kicker { margin: 0; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--cyan); }
+.chapter h2 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: clamp(1.6rem, 5.4vw, 3.3rem); line-height: 1.04; text-transform: uppercase; letter-spacing: 0.01em; }
+.word { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: 0.08em; }
+.ch { display: inline-block; transform: translateY(112%); }
+.chapter.in .ch { animation: rise 0.95s cubic-bezier(0.2, 0.9, 0.1, 1) forwards; animation-delay: calc(var(--i) * 38ms); }
+.chapter p.sub { margin: 0; max-width: 46ch; color: #cfd5f5; opacity: 0; text-wrap: pretty; }
+.chapter.in p.sub { animation: fadeup 0.9s 0.55s both; }
+@keyframes rise { to { transform: translateY(0); } }
+@keyframes fadeup { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) {
+  .ch { transform: none; }
+  .chapter.in .ch, .chapter.in p.sub { animation: none; opacity: 1; transform: none; }
+  .chapter p.sub { opacity: 1; }
+}
+
+.intro { position: absolute; inset: 0; z-index: 5; display: grid; place-content: center; justify-items: center; gap: 16px; padding: 24px; text-align: center; background: radial-gradient(ellipse at center, rgba(4, 5, 12, 0.74), rgba(4, 5, 12, 0.18) 72%); }
+.intro h2 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: clamp(1.7rem, 5.4vw, 3.2rem); line-height: 1.05; text-transform: uppercase; text-wrap: balance; }
+.intro p { margin: 0; max-width: 44ch; color: #cfd5f5; text-wrap: pretty; }
+.intro .small { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.02em; color: var(--muted); }
+.btns { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 4px; }
+.btn { font-family: var(--font-body); font-weight: 600; font-size: 1rem; padding: 14px 22px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.22); background: rgba(4, 5, 12, 0.5); color: var(--ink); cursor: pointer; }
+.btn:hover { border-color: rgba(255, 255, 255, 0.5); }
+.btn.primary { background: var(--core); border-color: var(--core); color: #1b1006; }
+.btn.primary:hover { background: #ffc58d; }
+.btn:focus-visible, .pill:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+
+.ctl { position: absolute; z-index: 6; top: 14px; right: 14px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.pill { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.04em; padding: 9px 13px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(4, 5, 12, 0.5); color: var(--ink); cursor: pointer; backdrop-filter: blur(6px); }
+.pill:hover { border-color: rgba(255, 255, 255, 0.5); }
+.pill[aria-pressed="true"] { border-color: var(--core); color: var(--core); }
+
+.nogl { position: absolute; inset: 0; z-index: 8; display: grid; place-content: center; padding: 24px; text-align: center; color: var(--muted); background: var(--void); }
+.foot { margin: 0; max-width: 78ch; font-size: 13px; color: var(--muted); font-family: var(--font-mono); letter-spacing: 0.01em; line-height: 1.6; }
+</style>
+
+</head>
+<body>
+<main class="page">
+  <header class="head">
+    <h1>Sternenreise</h1>
+    <p class="lede">Ein Flug durch eine Spiralgalaxie in vier Kapiteln, live in WebGL gerechnet und mit Ton unterlegt. Danach gehört die Kamera dir.</p>
+  </header>
+
+  <section class="stage" id="stage" aria-label="Interaktive Galaxie">
+    <canvas id="gl" aria-label="Spiralgalaxie mit Hyperraumflug, Supernova und Sternschnuppen"></canvas>
+    <canvas id="fx"></canvas>
+    <div class="vignette"></div>
+
+    <div class="chapter" id="chapter" hidden aria-live="polite">
+      <p class="kicker" id="ch-kicker"></p>
+      <h2 id="ch-title"></h2>
+      <p class="sub" id="ch-text"></p>
+    </div>
+
+    <div class="intro" id="intro">
+      <h2>Bereit für den Hyperraum?</h2>
+      <p>Rund 45 Sekunden Flug durch eine Galaxie mit Supernova. Danach kannst du die Ansicht drehen und selbst Sterne explodieren lassen.</p>
+      <div class="btns">
+        <button class="btn primary" id="go-sound" type="button">Mit Ton starten</button>
+        <button class="btn" id="go-mute" type="button">Ohne Ton</button>
+      </div>
+      <p class="small">iPhone: Stummschalter an der Seite ausschalten, sonst bleibt es still.</p>
+    </div>
+
+    <div class="ctl" id="ctl" hidden>
+      <button class="pill" id="b-snd" type="button" aria-pressed="false">Ton aus</button>
+      <button class="pill" id="b-re" type="button">Neustart</button>
+      <button class="pill" id="b-fs" type="button">Vollbild</button>
+    </div>
+
+    <div class="nogl" id="nogl" hidden></div>
+    <div id="flash"></div>
+  </section>
+
+  <p class="foot"><span id="count">90.000</span> Sterne als Partikel auf dem Grafikchip, Ton aus Oszillatoren und Rauschen. Ziehen dreht die Ansicht, Mausrad zoomt, Tippen zündet eine Supernova.</p>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(() => {
+  'use strict';
+  const $ = (s) => document.querySelector(s);
+  const TAU = Math.PI * 2;
+  const clamp = (x, a = 0, b = 1) => (x < a ? a : x > b ? b : x);
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a)); return t * t * (3 - 2 * t); };
+  const smoother = (t) => { t = clamp(t); return t * t * t * (t * (t * 6 - 15) + 10); };
+  const mulberry = (a) => () => {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+
+  const stage = $('#stage'), glc = $('#gl'), fxc = $('#fx'), flashEl = $('#flash');
+  const introEl = $('#intro'), chapterEl = $('#chapter'), ctlEl = $('#ctl'), noglEl = $('#nogl');
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const small = Math.min(window.innerWidth, window.innerHeight) < 700;
+
+  function showNoGl(msg) {
+    noglEl.textContent = msg;
+    noglEl.hidden = false;
+    introEl.hidden = true;
+  }
+  if (typeof THREE === 'undefined') { showNoGl('Die 3D-Bibliothek konnte nicht geladen werden. Prüfe die Internetverbindung und lade die Seite neu.'); return; }
+  let renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas: glc, antialias: false, powerPreference: 'high-performance' });
+  } catch (e) { showNoGl('Dieses Gerät oder dieser Browser stellt kein WebGL bereit, daher läuft die Sternenreise hier nicht.'); return; }
+
+  /* ===================== Ton (Web Audio, alles live erzeugt) ===================== */
+  const A = (() => {
+    let ctx = null, bus, send, master, pad = null, noise = null, silent = null;
+    const mf = (m) => 440 * Math.pow(2, (m - 69) / 12);
+    const chords = [[38, 45, 50, 57], [38, 45, 53, 60, 64], [38, 44, 50, 53], [38, 45, 52, 57, 64, 69]];
+    const pent = [62, 65, 67, 69, 72, 74, 77, 79];
+    function unlockIos() {
+      if (silent) return;
+      try {
+        const sr = 8000, n = 800;
+        const buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+        const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+        w(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); w(8, 'WAVE'); w(12, 'fmt ');
+        v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+        v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+        w(36, 'data'); v.setUint32(40, n * 2, true);
+        silent = document.createElement('audio');
+        silent.src = URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+        silent.loop = true;
+        silent.setAttribute('playsinline', '');
+        const p = silent.play();
+        if (p && p.catch) p.catch(() => {});
+      } catch (e) { /* ohne Fallback weiter */ }
+    }
+    function init() {
+      if (ctx) return true;
+      try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) { /* ältere Browser */ }
+      unlockIos();
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return false;
+      ctx = new AC();
+      master = ctx.createGain();
+      master.gain.value = 0;
+      const comp = ctx.createDynamicsCompressor();
+      comp.threshold.value = -16;
+      comp.ratio.value = 5;
+      master.connect(comp);
+      comp.connect(ctx.destination);
+      bus = ctx.createGain();
+      bus.connect(master);
+      send = ctx.createGain();
+      const conv = ctx.createConvolver();
+      const len = Math.floor(ctx.sampleRate * 3.4);
+      const imp = ctx.createBuffer(2, len, ctx.sampleRate);
+      for (let c = 0; c < 2; c++) {
+        const d = imp.getChannelData(c);
+        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.4);
+      }
+      conv.buffer = imp;
+      const rv = ctx.createGain();
+      rv.gain.value = 0.6;
+      send.connect(conv);
+      conv.connect(rv);
+      rv.connect(master);
+      noise = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+      const nd = noise.getChannelData(0);
+      for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+      return true;
+    }
+    function out(node, pan, rev) {
+      let n = node;
+      if (pan && ctx.createStereoPanner) {
+        const p = ctx.createStereoPanner();
+        p.pan.value = pan;
+        n.connect(p);
+        n = p;
+      }
+      n.connect(bus);
+      if (rev > 0) {
+        const s = ctx.createGain();
+        s.gain.value = rev;
+        n.connect(s);
+        s.connect(send);
+      }
+    }
+    function tone(freq, o = {}) {
+      if (!ctx) return;
+      const { type = 'sine', t = 0, dur = 0.5, gain = 0.1, atk = 0.005, pan = 0, rev = 0.3, lp = 0, to = 0 } = o;
+      const t0 = ctx.currentTime + t;
+      const osc = ctx.createOscillator();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, t0);
+      if (to) osc.frequency.exponentialRampToValueAtTime(to, t0 + dur);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(gain, t0 + atk);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      if (lp) {
+        const f = ctx.createBiquadFilter();
+        f.type = 'lowpass';
+        f.frequency.value = lp;
+        osc.connect(f);
+        f.connect(g);
+      } else osc.connect(g);
+      out(g, pan, rev);
+      osc.start(t0);
+      osc.stop(t0 + dur + 0.05);
+    }
+    const pluck = (m, o = {}) => tone(mf(m), { type: 'triangle', dur: 0.55, gain: 0.08, atk: 0.003, lp: 3600, rev: 0.45, ...o });
+    const bell = (m, o = {}) => {
+      const f = mf(m);
+      tone(f, { dur: 2.2, gain: 0.07, rev: 0.7, ...o });
+      tone(f * 2.01, { dur: 1.4, gain: 0.025, rev: 0.7, ...o });
+      tone(f * 3.01, { dur: 0.8, gain: 0.012, rev: 0.7, ...o });
+    };
+    function noiseFx(f0, f1, dur, gainPeak, peakAt, type, q) {
+      if (!ctx) return;
+      const t0 = ctx.currentTime;
+      const src = ctx.createBufferSource();
+      src.buffer = noise;
+      src.loop = true;
+      const f = ctx.createBiquadFilter();
+      f.type = type;
+      f.Q.value = q;
+      f.frequency.setValueAtTime(f0, t0);
+      f.frequency.exponentialRampToValueAtTime(f1, t0 + dur);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(gainPeak, t0 + dur * peakAt);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur + 0.05);
+      src.connect(f);
+      f.connect(g);
+      out(g, 0, 0.4);
+      src.start(t0);
+      src.stop(t0 + dur + 0.1);
+    }
+    const whoosh = (dur = 0.9, gain = 0.1) => noiseFx(260, 5200, dur, gain, 0.8, 'bandpass', 1.4);
+    const riser = (dur, gain) => noiseFx(300, 9000, dur, gain, 0.97, 'bandpass', 2);
+    const crash = (dur, gain) => noiseFx(9000, 250, dur, gain, 0.02, 'lowpass', 0.7);
+    const glide = (f0, f1, dur, gain) => tone(f0, { type: 'sawtooth', dur, gain, atk: dur * 0.9, to: f1, lp: 2400, rev: 0.5 });
+    const boom = (g = 0.4, dur = 1.6) => {
+      tone(110, { dur, gain: g, atk: 0.004, to: 36, rev: 0.3 });
+      tone(55, { dur: dur * 1.2, gain: g * 0.7, atk: 0.006, to: 28, rev: 0.2 });
+    };
+    const kick = (g = 0.16) => tone(150, { dur: 0.22, gain: g, atk: 0.002, to: 46, rev: 0 });
+    function hat(g = 0.025) {
+      if (!ctx) return;
+      const t0 = ctx.currentTime;
+      const src = ctx.createBufferSource();
+      src.buffer = noise;
+      const f = ctx.createBiquadFilter();
+      f.type = 'highpass';
+      f.frequency.value = 8000;
+      const gn = ctx.createGain();
+      gn.gain.setValueAtTime(g, t0);
+      gn.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.05);
+      src.connect(f);
+      f.connect(gn);
+      out(gn, 0, 0.1);
+      src.start(t0, Math.random());
+      src.stop(t0 + 0.06);
+    }
+    function stopPad(fade = 1.6) {
+      if (!pad || !ctx) return;
+      const p = pad;
+      pad = null;
+      const now = ctx.currentTime;
+      p.g.gain.cancelScheduledValues(now);
+      p.g.gain.setValueAtTime(p.g.gain.value, now);
+      p.g.gain.linearRampToValueAtTime(0, now + fade);
+      setTimeout(() => {
+        p.oscs.forEach((o) => { try { o.stop(); } catch (e) { /* schon gestoppt */ } });
+        p.g.disconnect();
+      }, fade * 1000 + 100);
+    }
+    function setPad(k) {
+      if (!ctx) return;
+      stopPad();
+      const now = ctx.currentTime;
+      const ch = chords[k % chords.length];
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0, now);
+      g.gain.linearRampToValueAtTime(0.2, now + 2.2);
+      const lp = ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 800;
+      lp.Q.value = 0.7;
+      const lfo = ctx.createOscillator();
+      lfo.frequency.value = 0.08 + k * 0.03;
+      const lg = ctx.createGain();
+      lg.gain.value = 320;
+      lfo.connect(lg);
+      lg.connect(lp.frequency);
+      const oscs = [lfo];
+      ch.forEach((m) => [-8, 8].forEach((d) => {
+        const o = ctx.createOscillator();
+        o.type = 'sawtooth';
+        o.frequency.value = mf(m);
+        o.detune.value = d;
+        const v = ctx.createGain();
+        v.gain.value = 0.085 * Math.min(1, 4.5 / ch.length);
+        o.connect(v);
+        v.connect(lp);
+        o.start();
+        oscs.push(o);
+      }));
+      lfo.start();
+      lp.connect(g);
+      out(g, 0, 0.5);
+      pad = { g, oscs };
+    }
+    return {
+      init, mf, pent, tone, pluck, bell, whoosh, riser, crash, glide, boom, kick, hat, setPad, stopPad,
+      get ready() { return !!ctx; },
+      resume() { if (ctx && ctx.state === 'suspended') ctx.resume(); },
+      level(on) { if (ctx) master.gain.setTargetAtTime(on ? 0.85 : 0, ctx.currentTime, 0.08); },
+    };
+  })();
+  const P5 = A.pent;
+
+  /* ===================== Szene ===================== */
+  const DPR = Math.min(window.devicePixelRatio || 1, small ? 1.5 : 2);
+  renderer.setPixelRatio(DPR);
+  renderer.autoClear = false;
+  renderer.setClearColor(0x04050c, 1);
+
+  const cam = new THREE.PerspectiveCamera(55, 1, 0.1, 3000);
+  const warpCam = new THREE.PerspectiveCamera(70, 1, 0.1, 1000);
+  const scene = new THREE.Scene();
+  const warpScene = new THREE.Scene();
+  const galaxy = new THREE.Group();
+  galaxy.rotation.set(0.22, 0, 0.18);
+  scene.add(galaxy);
+
+  function mkTex(w, h, draw) {
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    draw(c.getContext('2d'), w, h);
+    return new THREE.CanvasTexture(c);
+  }
+  const glowTex = mkTex(128, 128, (g, w, h) => {
+    const r = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
+    r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(0.25, 'rgba(255,255,255,0.55)');
+    r.addColorStop(0.6, 'rgba(255,255,255,0.12)'); r.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = r; g.fillRect(0, 0, w, h);
+  });
+  const ringTex = mkTex(256, 256, (g, w, h) => {
+    const r = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
+    r.addColorStop(0, 'rgba(255,255,255,0)'); r.addColorStop(0.66, 'rgba(255,255,255,0)');
+    r.addColorStop(0.8, 'rgba(255,255,255,0.95)'); r.addColorStop(0.9, 'rgba(255,255,255,0.25)');
+    r.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = r; g.fillRect(0, 0, w, h);
+  });
+  const flareTex = mkTex(256, 64, (g, w, h) => {
+    g.translate(w / 2, h / 2); g.scale(1, 0.12);
+    const r = g.createRadialGradient(0, 0, 0, 0, 0, w / 2);
+    r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(0.3, 'rgba(255,255,255,0.5)'); r.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = r; g.beginPath(); g.arc(0, 0, w / 2, 0, TAU); g.fill();
+  });
+  const cloudTex = mkTex(256, 256, (g, w, h) => {
+    const rnd = mulberry(11);
+    for (let i = 0; i < 22; i++) {
+      const x = w * (0.25 + rnd() * 0.5), y = h * (0.25 + rnd() * 0.5), r = w * (0.1 + rnd() * 0.16);
+      const gr = g.createRadialGradient(x, y, 0, x, y, r);
+      gr.addColorStop(0, 'rgba(255,255,255,0.22)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+      g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    }
+  });
+
+  const V_POINT_FRAG = `
+    varying vec3 vC; varying float vA;
+    void main(){
+      float l = length(gl_PointCoord - 0.5);
+      if (l > 0.5) discard;
+      float a = pow(1.0 - l * 2.0, 2.0);
+      gl_FragColor = vec4(vC, a * vA);
+    }`;
+  const addMat = (uniforms, vs, fs) => new THREE.ShaderMaterial({
+    uniforms, vertexShader: vs, fragmentShader: fs, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+  });
+
+  /* --- Galaxie: Partikel mit differentieller Rotation im Shader --- */
+  const N = small ? 42000 : 90000;
+  const ARMS = 4, RAD = 42, SPIN = 0.21;
+  const gUniforms = { uTime: { value: 0 }, uPx: { value: DPR }, uFlash: { value: 0 }, uSize: { value: small ? 2.4 : 2.2 }, uGain: { value: 1.3 } };
+  {
+    const pos = new Float32Array(N * 3), col = new Float32Array(N * 3), rnd1 = new Float32Array(N), siz = new Float32Array(N);
+    const cIn = new THREE.Color('#ffc58a'), cMid = new THREE.Color('#ff5fa2'), cOut = new THREE.Color('#5a78ff'), white = new THREE.Color('#ffffff');
+    const tmp = new THREE.Color();
+    const rg = mulberry(42);
+    const rand = () => Math.pow(rg(), 3) * (rg() < 0.5 ? 1 : -1);
+    for (let i = 0; i < N; i++) {
+      let x, y, z, t;
+      if (rg() < 0.16) {
+        const rr = Math.pow(rg(), 2.2) * RAD * 0.38, th = rg() * TAU, ph = Math.acos(2 * rg() - 1);
+        x = rr * Math.sin(ph) * Math.cos(th); y = rr * Math.cos(ph) * 0.55; z = rr * Math.sin(ph) * Math.sin(th);
+        t = rr / RAD * 0.5;
+      } else {
+        const rr = Math.pow(rg(), 1.55) * RAD;
+        const a = (i % ARMS) / ARMS * TAU + rr * SPIN;
+        x = Math.cos(a) * rr + rand() * 0.34 * (rr * 0.5 + 3);
+        y = rand() * (1.6 + rr * 0.04);
+        z = Math.sin(a) * rr + rand() * 0.34 * (rr * 0.5 + 3);
+        t = rr / RAD;
+      }
+      pos[i * 3] = x; pos[i * 3 + 1] = y; pos[i * 3 + 2] = z;
+      if (t < 0.35) tmp.copy(cIn).lerp(cMid, t / 0.35); else tmp.copy(cMid).lerp(cOut, (t - 0.35) / 0.65);
+      if (rg() < 0.06) tmp.lerp(white, 0.8);
+      const v = 0.55 + rg() * 0.6;
+      col[i * 3] = tmp.r * v; col[i * 3 + 1] = tmp.g * v; col[i * 3 + 2] = tmp.b * v;
+      rnd1[i] = rg();
+      siz[i] = 0.6 + Math.pow(rg(), 4) * 2.2;
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('aColor', new THREE.BufferAttribute(col, 3));
+    geo.setAttribute('aRand', new THREE.BufferAttribute(rnd1, 1));
+    geo.setAttribute('aSize', new THREE.BufferAttribute(siz, 1));
+    const mat = addMat(gUniforms, `
+      uniform float uTime, uPx, uFlash, uSize, uGain;
+      attribute vec3 aColor; attribute float aRand, aSize;
+      varying vec3 vC; varying float vA;
+      void main(){
+        vec3 p = position;
+        float r = length(p.xz);
+        float ang = uTime * (0.55 / (1.0 + r * 0.09));
+        float c = cos(ang), s = sin(ang);
+        p.xz = mat2(c, -s, s, c) * p.xz;
+        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+        gl_Position = projectionMatrix * mv;
+        float tw = 0.75 + 0.5 * sin(uTime * (1.5 + aRand * 4.0) + aRand * 40.0);
+        gl_PointSize = min(aSize * uSize * uPx * tw * (90.0 / -mv.z), 14.0);
+        vC = aColor * uGain * (1.0 + uFlash * 2.5);
+        vA = 0.55 + 0.45 * tw;
+      }`, V_POINT_FRAG);
+    const pts = new THREE.Points(geo, mat);
+    pts.frustumCulled = false;
+    galaxy.add(pts);
+  }
+  $('#count').textContent = N.toLocaleString('de-DE');
+
+  /* --- Hintergrundsterne --- */
+  const bgUniforms = { uTime: { value: 0 }, uPx: { value: DPR } };
+  const bgStars = (() => {
+    const BN = small ? 3500 : 7000, rb = mulberry(9);
+    const pos = new Float32Array(BN * 3), col = new Float32Array(BN * 3), rn = new Float32Array(BN), sz = new Float32Array(BN);
+    const pal = [[1, 1, 1], [0.8, 0.88, 1], [1, 0.88, 0.77], [1, 0.69, 0.82]];
+    for (let i = 0; i < BN; i++) {
+      const th = rb() * TAU, ph = Math.acos(2 * rb() - 1), r = 900 + rb() * 900;
+      pos[i * 3] = r * Math.sin(ph) * Math.cos(th); pos[i * 3 + 1] = r * Math.cos(ph); pos[i * 3 + 2] = r * Math.sin(ph) * Math.sin(th);
+      const c = pal[(rb() * pal.length) | 0], v = 0.4 + rb() * 0.6;
+      col[i * 3] = c[0] * v; col[i * 3 + 1] = c[1] * v; col[i * 3 + 2] = c[2] * v;
+      rn[i] = rb(); sz[i] = 0.5 + Math.pow(rb(), 3) * 1.8;
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('aColor', new THREE.BufferAttribute(col, 3));
+    geo.setAttribute('aRand', new THREE.BufferAttribute(rn, 1));
+    geo.setAttribute('aSize', new THREE.BufferAttribute(sz, 1));
+    const mat = addMat(bgUniforms, `
+      uniform float uTime, uPx;
+      attribute vec3 aColor; attribute float aRand, aSize;
+      varying vec3 vC; varying float vA;
+      void main(){
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        gl_Position = projectionMatrix * mv;
+        float tw = 0.65 + 0.35 * sin(uTime * (1.0 + aRand * 3.0) + aRand * 60.0);
+        gl_PointSize = aSize * uPx * (1.0 + tw * 0.5) * 1.6;
+        vC = aColor; vA = 0.5 + 0.5 * tw;
+      }`, V_POINT_FRAG);
+    const p = new THREE.Points(geo, mat);
+    p.frustumCulled = false;
+    scene.add(p);
+    return p;
+  })();
+
+  /* --- Nebel als große weiche Sprites, laufen mit den Armen mit --- */
+  const nebula = [];
+  {
+    const cnt = small ? 22 : 40, rn = mulberry(21);
+    const cols = ['#ff3d8b', '#7c5cff', '#46e3ff', '#ff8a4c'];
+    for (let i = 0; i < cnt; i++) {
+      const r = Math.pow(rn(), 0.7) * RAD * 0.9;
+      const a = (i % ARMS) / ARMS * TAU + r * SPIN + (rn() - 0.5) * 0.7;
+      const c = cols[r < RAD * 0.35 ? (rn() < 0.6 ? 0 : 3) : (rn() < 0.5 ? 1 : 2)];
+      const m = new THREE.SpriteMaterial({ map: cloudTex, color: c, transparent: true, opacity: 0.07 + rn() * 0.1, blending: THREE.AdditiveBlending, depthWrite: false });
+      m.rotation = rn() * TAU;
+      const s = new THREE.Sprite(m);
+      const sc = 10 + rn() * 22;
+      s.scale.set(sc, sc, 1);
+      const x = Math.cos(a) * r, z = Math.sin(a) * r;
+      galaxy.add(s);
+      nebula.push({ s, x, z, r, y: (rn() - 0.5) * 3, spin: (rn() - 0.5) * 0.05 });
+    }
+  }
+  const rotPos = (x, z, r, gt) => {
+    const a = gt * (0.55 / (1 + r * 0.09)), c = Math.cos(a), s = Math.sin(a);
+    return [c * x + s * z, -s * x + c * z];
+  };
+
+  /* --- Kern --- */
+  const mkSprite = (tex, color, scale, opacity) => {
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, color, transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false }));
+    s.scale.set(scale, scale, 1);
+    return s;
+  };
+  const coreGlow = mkSprite(glowTex, 0xffb36b, 22, 0.85);
+  const coreHot = mkSprite(glowTex, 0xfff0dd, 6, 0.9);
+  galaxy.add(coreGlow, coreHot);
+
+  /* --- Vorläuferstern der Supernova --- */
+  const anchor = new THREE.Object3D();
+  galaxy.add(anchor);
+  const NR = 21, NTH = NR * SPIN + Math.PI / 2, NX = Math.cos(NTH) * NR, NZ = Math.sin(NTH) * NR;
+  const prog = mkSprite(glowTex, 0xcfe8ff, 1, 0.9);
+  const progHalo = mkSprite(glowTex, 0x46e3ff, 4, 0.2);
+  anchor.add(progHalo, prog);
+
+  /* --- Hyperraum: Sternstriche --- */
+  const wUniforms = { uOff: { value: 0 }, uLen: { value: 4 }, uAlpha: { value: 1 } };
+  {
+    const WN = small ? 1800 : 3600, rw = mulberry(77);
+    const wpos = new Float32Array(WN * 6), wend = new Float32Array(WN * 2), wr = new Float32Array(WN * 2);
+    for (let i = 0; i < WN; i++) {
+      const a = rw() * TAU, rad = 3 + Math.pow(rw(), 0.8) * 75, z0 = rw() * 360, x = Math.cos(a) * rad, y = Math.sin(a) * rad, rr = rw();
+      for (let e = 0; e < 2; e++) {
+        const k = i * 2 + e;
+        wpos[k * 3] = x; wpos[k * 3 + 1] = y; wpos[k * 3 + 2] = z0;
+        wend[k] = e; wr[k] = rr;
+      }
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(wpos, 3));
+    geo.setAttribute('aEnd', new THREE.BufferAttribute(wend, 1));
+    geo.setAttribute('aRand', new THREE.BufferAttribute(wr, 1));
+    const mat = addMat(wUniforms, `
+      uniform float uOff, uLen, uAlpha;
+      attribute float aEnd, aRand;
+      varying vec3 vC; varying float vA;
+      void main(){
+        vec3 p = position;
+        float z = mod(p.z + uOff, 360.0) - 340.0;
+        z -= aEnd * uLen * (0.6 + aRand);
+        p.z = z;
+        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+        gl_Position = projectionMatrix * mv;
+        float d = clamp(-z / 340.0, 0.0, 1.0);
+        vA = uAlpha * (1.0 - d) * (0.35 + aRand) * (1.0 - aEnd * 0.9);
+        vC = mix(vec3(0.55, 0.78, 1.0), vec3(1.0), aRand);
+      }`, `
+      varying vec3 vC; varying float vA;
+      void main(){ gl_FragColor = vec4(vC, vA); }`);
+    const lines = new THREE.LineSegments(geo, mat);
+    lines.frustumCulled = false;
+    warpScene.add(lines);
+  }
+  const tunnel = mkSprite(glowTex, 0xbcd8ff, 20, 0);
+  tunnel.position.set(0, 0, -280);
+  warpScene.add(tunnel);
+
+  /* --- Supernova-Effekte --- */
+  const novae = [];
+  const debrisVS = `
+    uniform float uT, uPx, uScale;
+    attribute vec3 aDir; attribute float aSpeed, aRand;
+    varying vec3 vC; varying float vA;
+    void main(){
+      float e = 1.0 - exp(-uT * 1.6);
+      vec3 p = position + aDir * aSpeed * e * uScale * 3.0;
+      vec4 mv = modelViewMatrix * vec4(p, 1.0);
+      gl_Position = projectionMatrix * mv;
+      float life = clamp(uT / (3.0 + aRand * 3.0), 0.0, 1.0);
+      vec3 hot = vec3(1.0, 0.95, 0.85), warm = vec3(1.0, 0.45, 0.15), cool = vec3(0.35, 0.35, 1.0);
+      vC = mix(mix(hot, warm, smoothstep(0.0, 0.35, life)), cool, smoothstep(0.3, 1.0, life) * 0.6);
+      vA = (1.0 - life) * (1.0 - life) * smoothstep(0.0, 0.05, uT);
+      gl_PointSize = min((2.0 + aRand * 3.0) * uPx * (1.0 - life * 0.6) * (140.0 / -mv.z), 80.0);
+    }`;
+  let bigDone = false, miniFlash = 0, shake = 0, clickShake = 0;
+  function spawnNova(local, scale, big) {
+    if (!big) {
+      const minis = novae.filter((n) => !n.big);
+      if (minis.length >= 6) killNova(minis[0]);
+    }
+    const grp = new THREE.Group();
+    grp.position.copy(local);
+    galaxy.add(grp);
+    const n = big ? (small ? 2400 : 4200) : (small ? 700 : 1500);
+    const dir = new Float32Array(n * 3), spd = new Float32Array(n), rn = new Float32Array(n), zero = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) {
+      const th = Math.random() * TAU, ph = Math.acos(2 * Math.random() - 1);
+      dir[i * 3] = Math.sin(ph) * Math.cos(th); dir[i * 3 + 1] = Math.cos(ph) * 0.8; dir[i * 3 + 2] = Math.sin(ph) * Math.sin(th);
+      spd[i] = 0.3 + Math.pow(Math.random(), 0.6) * 0.9;
+      rn[i] = Math.random();
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(zero, 3));
+    geo.setAttribute('aDir', new THREE.BufferAttribute(dir, 3));
+    geo.setAttribute('aSpeed', new THREE.BufferAttribute(spd, 1));
+    geo.setAttribute('aRand', new THREE.BufferAttribute(rn, 1));
+    const mat = addMat({ uT: { value: 0 }, uPx: { value: DPR }, uScale: { value: scale * 14 } }, debrisVS, V_POINT_FRAG);
+    const pts = new THREE.Points(geo, mat);
+    pts.frustumCulled = false;
+    const core = mkSprite(glowTex, 0xeaf4ff, 1, 1);
+    const ring1 = mkSprite(ringTex, 0xbfe9ff, 1, 0);
+    const ring2 = mkSprite(ringTex, 0xff8a5c, 1, 0);
+    const flare = new THREE.Sprite(new THREE.SpriteMaterial({ map: flareTex, color: 0xdff1ff, transparent: true, opacity: 1, blending: THREE.AdditiveBlending, depthWrite: false }));
+    grp.add(pts, core, ring1, ring2, flare);
+    const nv = { grp, geo, mat, pts, core, ring1, ring2, flare, t: 0, life: big ? 9 : 5, scale, big };
+    novae.push(nv);
+    return nv;
+  }
+  function killNova(nv) {
+    galaxy.remove(nv.grp);
+    nv.geo.dispose(); nv.mat.dispose();
+    [nv.core, nv.ring1, nv.ring2, nv.flare].forEach((s) => s.material.dispose());
+    const i = novae.indexOf(nv);
+    if (i >= 0) novae.splice(i, 1);
+  }
+  function updateNovae(dt) {
+    for (const nv of novae.slice()) {
+      nv.t += dt;
+      const t = nv.t, s = nv.scale, big = nv.big;
+      if (t > nv.life) { killNova(nv); continue; }
+      nv.mat.uniforms.uT.value = t;
+      const cs = s * (4 + 26 * (1 - Math.exp(-t * 2.5)));
+      nv.core.scale.set(cs, cs, 1);
+      nv.core.material.opacity = Math.exp(-t * 1.6);
+      const u1 = 1 - Math.exp(-t * (big ? 1.0 : 1.8));
+      const r1 = s * (2 + 90 * u1);
+      nv.ring1.scale.set(r1, r1, 1);
+      nv.ring1.material.opacity = Math.pow(1 - u1, 1.5) * 0.9;
+      const t2 = t - 0.25;
+      if (t2 > 0) {
+        const u2 = 1 - Math.exp(-t2 * (big ? 0.9 : 1.6));
+        const r2 = s * (2 + 66 * u2);
+        nv.ring2.scale.set(r2, r2, 1);
+        nv.ring2.material.opacity = Math.pow(1 - u2, 1.5) * 0.7;
+      }
+      const fl = Math.exp(-t * 3.5);
+      nv.flare.scale.set(s * 110 * (0.3 + fl), s * 14 * (0.3 + fl), 1);
+      nv.flare.material.opacity = fl;
+    }
+  }
+  function explode() {
+    spawnNova(anchor.position.clone(), 1, true);
+    prog.visible = false;
+    progHalo.visible = false;
+    bigDone = true;
+    shake = 1;
+  }
+  function clearNovae() { while (novae.length) killNova(novae[0]); }
+
+  /* ===================== 2D-Effekte (Sternschnuppen, Funken) ===================== */
+  const fx = fxc.getContext('2d');
+  let fxW = 1, fxH = 1, fxD = 1;
+  const meteors = [], sparks = [];
+  function spawnMeteor() {
+    const sp = (900 + Math.random() * 600) * Math.max(0.6, fxW / 900);
+    const ang = Math.PI * (0.64 + Math.random() * 0.1);
+    meteors.push({ x: fxW * (0.25 + Math.random() * 0.75), y: -30, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, len: 150 + Math.random() * 130 });
+  }
+  function spawnSparks(x, y) {
+    for (let i = 0; i < 18; i++) {
+      const a = Math.random() * TAU, sp = 120 + Math.random() * 320;
+      sparks.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 0.5 + Math.random() * 0.4, age: 0 });
+    }
+  }
+  function drawFx(dt) {
+    fx.setTransform(fxD, 0, 0, fxD, 0, 0);
+    fx.clearRect(0, 0, fxW, fxH);
+    fx.globalCompositeOperation = 'lighter';
+    fx.lineCap = 'round';
+    for (let i = meteors.length - 1; i >= 0; i--) {
+      const m = meteors[i];
+      m.x += m.vx * dt; m.y += m.vy * dt;
+      if (m.x < -300 || m.y > fxH + 300) { meteors.splice(i, 1); continue; }
+      const k = Math.hypot(m.vx, m.vy), tx = m.x - (m.vx / k) * m.len, ty = m.y - (m.vy / k) * m.len;
+      const g = fx.createLinearGradient(m.x, m.y, tx, ty);
+      g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.3, 'rgba(150,220,255,0.5)'); g.addColorStop(1, 'rgba(150,220,255,0)');
+      fx.strokeStyle = g; fx.lineWidth = 2.2;
+      fx.beginPath(); fx.moveTo(tx, ty); fx.lineTo(m.x, m.y); fx.stroke();
+      fx.fillStyle = 'rgba(255,255,255,0.9)';
+      fx.beginPath(); fx.arc(m.x, m.y, 2.6, 0, TAU); fx.fill();
+    }
+    for (let i = sparks.length - 1; i >= 0; i--) {
+      const p = sparks[i];
+      p.age += dt;
+      if (p.age > p.life) { sparks.splice(i, 1); continue; }
+      const px = p.x, py = p.y;
+      p.x += p.vx * dt; p.y += p.vy * dt;
+      p.vx *= 0.96; p.vy *= 0.96;
+      fx.strokeStyle = `rgba(255,${200 - 80 * (p.age / p.life) | 0},120,${1 - p.age / p.life})`;
+      fx.lineWidth = 1.6;
+      fx.beginPath(); fx.moveTo(px, py); fx.lineTo(p.x, p.y); fx.stroke();
+    }
+    fx.globalCompositeOperation = 'source-over';
+  }
+
+  /* ===================== Ablauf ===================== */
+  const CINE = 44;
+  const CH = [
+    { t: 0, k: 'Kapitel 1', title: 'Hyperraum', text: 'Die Sterne ziehen sich zu Strichen, die Kamera beschleunigt.' },
+    { t: 6, k: 'Kapitel 2', title: 'Spiralarme', text: () => `${N.toLocaleString('de-DE')} Sterne umkreisen das Zentrum, innen schneller als außen.` },
+    { t: 20, k: 'Kapitel 3', title: 'Supernova', text: 'Ein Stern in einem der Arme wird instabil. Gleich explodiert er.' },
+    { t: 28.6, k: 'Kapitel 4', title: 'Kosmische Weite', text: 'Die Druckwelle zieht hinaus. Tippe ins Bild, um selbst Sterne explodieren zu lassen. Ziehen dreht die Ansicht.' },
+  ];
+  const kickerEl = $('#ch-kicker'), titleEl = $('#ch-title'), textEl = $('#ch-text');
+  let chIdx = -1;
+  function setChapter(i) {
+    chIdx = i;
+    const c = CH[i];
+    kickerEl.textContent = c.k;
+    titleEl.textContent = '';
+    titleEl.setAttribute('aria-label', c.title);
+    let n = 0;
+    c.title.split(' ').forEach((w, wi) => {
+      const ws = document.createElement('span');
+      ws.className = 'word';
+      ws.setAttribute('aria-hidden', 'true');
+      [...w].forEach((ch) => {
+        const s = document.createElement('span');
+        s.className = 'ch';
+        s.style.setProperty('--i', String(n++));
+        s.textContent = ch;
+        ws.appendChild(s);
+      });
+      if (wi) titleEl.appendChild(document.createTextNode(' '));
+      titleEl.appendChild(ws);
+    });
+    textEl.textContent = typeof c.text === 'function' ? c.text() : c.text;
+    chapterEl.classList.remove('in');
+    void chapterEl.offsetWidth;
+    chapterEl.classList.add('in');
+    if (soundOn && A.ready) A.setPad(i);
+  }
+
+  /* Ereignisse: aud = Ton, vis = Bild; Zeiten in Sekunden seit Start */
+  const EV = [];
+  const ev = (t, aud, vis) => EV.push({ t, aud, vis });
+  ev(0, () => { A.riser(6, 0.2); A.glide(A.mf(38), A.mf(86), 6, 0.1); });
+  for (let k = 0; k < 24; k++) {
+    const tk = 6 * (1 - Math.pow(1 - k / 24, 2));
+    ev(tk, () => { A.hat(0.03 + 0.025 * k / 24); if (k % 2 === 0) A.kick(0.07 + 0.05 * k / 24); });
+  }
+  ev(6, () => { A.boom(0.55, 2.2); A.crash(1.8, 0.22); [62, 69, 74, 77].forEach((m, i) => A.bell(m, { t: 0.02 * i, gain: 0.06 })); });
+  {
+    let tt = 6.7;
+    const rr = mulberry(5);
+    while (tt < 21.5) {
+      const nn = P5[(rr() * 8) | 0] + 12 * ((rr() * 2) | 0), pan = (rr() - 0.5) * 1.6;
+      ev(tt, () => A.bell(nn, { pan, gain: 0.035, rev: 0.75 }));
+      tt += 0.45 + rr() * 0.4;
+    }
+  }
+  for (let tk = 15; tk < 22; tk += 1) ev(tk, () => A.kick(0.12));
+  ev(22, () => { A.riser(5.85, 0.26); A.glide(A.mf(45), A.mf(100), 5.85, 0.11); });
+  for (let k = 0; k < 20; k++) ev(22 + 5.85 * (1 - Math.pow(1 - k / 20, 2)), () => A.kick(0.14));
+  ev(28, () => {
+    A.boom(0.7, 3);
+    A.crash(2.8, 0.34);
+    [74, 77, 81, 86].forEach((m, i) => A.bell(m, { t: 0.4 + 0.1 * i, gain: 0.06 }));
+  }, explode);
+  {
+    let i = 0;
+    for (let tt = 29.6; tt < 43.6; tt += 0.28, i++) {
+      const nn = P5[i % 8] + 12 * (Math.floor(i / 8) % 2);
+      ev(tt, () => A.pluck(nn, { gain: 0.045, rev: 0.7, pan: Math.sin(i) * 0.7 }));
+    }
+  }
+  [31, 33.2, 35, 36.9, 38.6, 40.3, 42].forEach((tm, i) => ev(tm, () => { A.whoosh(0.55, 0.06); A.pluck(P5[(i * 3) % 8] + 24, { gain: 0.04, rev: 0.8 }); }, spawnMeteor));
+
+  const KF = [[0, 150, 0.2, 0.55], [6, 100, 0.3, 0.5], [16, 64, 1.3, 0.42], [24, 58, 2.3, 0.46], [28, 50, 2.55, 0.44], [31, 52, 2.7, 0.42], [38, 88, 3.6, 0.6], [44, 80, 4.3, 0.5]];
+  function path(T) {
+    if (T >= CINE) return { r: 80, az: 4.3 + (T - CINE) * 0.05, el: 0.5 };
+    let i = 0;
+    while (i < KF.length - 2 && T >= KF[i + 1][0]) i++;
+    const a = KF[i], b = KF[i + 1], u = smoother((T - a[0]) / (b[0] - a[0]));
+    return { r: lerp(a[1], b[1], u), az: lerp(a[2], b[2], u), el: lerp(a[3], b[3], u) };
+  }
+
+  let state = 'idle', T = 0, lastT = -0.001, gTime = 0, soundOn = false, inView = true;
+  let dAz = 0, dEl = 0, zoom = 1, nextAmb = 0, nextMet = 0;
+  const v3 = new THREE.Vector3(), v3b = new THREE.Vector3(), tgt = new THREE.Vector3();
+
+  const sndBtn = $('#b-snd');
+  function applyLevel() { A.level(soundOn && state === 'run' && inView && !document.hidden); }
+  function syncSnd() {
+    sndBtn.setAttribute('aria-pressed', String(soundOn));
+    sndBtn.textContent = soundOn ? 'Ton an' : 'Ton aus';
+    applyLevel();
+  }
+  function begin(withSound) {
+    state = 'run';
+    T = 0; lastT = -0.001;
+    clearNovae();
+    bigDone = false; prog.visible = true; progHalo.visible = true;
+    miniFlash = 0; shake = 0; clickShake = 0;
+    dAz = 0; dEl = 0; zoom = 1;
+    nextAmb = CINE + 1; nextMet = CINE + 3;
+    meteors.length = 0; sparks.length = 0;
+    introEl.hidden = true; chapterEl.hidden = false; ctlEl.hidden = false;
+    if (withSound) {
+      if (A.init()) { soundOn = true; A.resume(); } else soundOn = false;
+    }
+    setChapter(0);
+    if (soundOn && A.ready) A.setPad(0);
+    syncSnd();
+  }
+  $('#go-sound').addEventListener('click', () => begin(true));
+  $('#go-mute').addEventListener('click', () => begin(false));
+  $('#b-re').addEventListener('click', () => begin(false));
+  sndBtn.addEventListener('click', () => {
+    soundOn = !soundOn;
+    if (soundOn) {
+      if (!A.init()) { soundOn = false; syncSnd(); return; }
+      A.resume();
+      A.setPad(Math.max(chIdx, 0));
+    } else A.stopPad(0.3);
+    syncSnd();
+  });
+  const fsBtn = $('#b-fs');
+  const reqFs = stage.requestFullscreen || stage.webkitRequestFullscreen;
+  if (!reqFs) fsBtn.hidden = true;
+  fsBtn.addEventListener('click', () => {
+    try {
+      if (document.fullscreenElement || document.webkitFullscreenElement) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      else { const p = reqFs.call(stage); if (p && p.catch) p.catch(() => {}); }
+    } catch (e) { /* Vollbild nicht erlaubt */ }
+  });
+
+  /* Eingabe: ziehen, zoomen, tippen */
+  let drag = null;
+  glc.addEventListener('pointerdown', (e) => {
+    drag = { x: e.clientX, y: e.clientY, t: performance.now(), moved: 0 };
+    try { glc.setPointerCapture(e.pointerId); } catch (err) { /* egal */ }
+  });
+  glc.addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    drag.x = e.clientX; drag.y = e.clientY; drag.moved += Math.abs(dx) + Math.abs(dy);
+    dAz -= dx * 0.005; dEl += dy * 0.003;
+  });
+  glc.addEventListener('pointerup', (e) => {
+    if (drag && drag.moved < 8 && performance.now() - drag.t < 450) tap(e);
+    drag = null;
+  });
+  glc.addEventListener('pointercancel', () => { drag = null; });
+  glc.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    zoom = clamp(zoom * Math.exp(e.deltaY * 0.0012), 0.5, 1.5);
+  }, { passive: false });
+  const ray = new THREE.Raycaster();
+  function tap(e) {
+    if (state !== 'run' || T < 6.5) return;
+    const r = glc.getBoundingClientRect();
+    const px = e.clientX - r.left, py = e.clientY - r.top;
+    ray.setFromCamera({ x: (px / r.width) * 2 - 1, y: -(py / r.height) * 2 + 1 }, cam);
+    const q = new THREE.Quaternion();
+    galaxy.getWorldQuaternion(q);
+    const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(new THREE.Vector3(0, 1, 0).applyQuaternion(q), new THREE.Vector3());
+    const hit = ray.ray.intersectPlane(plane, new THREE.Vector3());
+    const local = hit ? galaxy.worldToLocal(hit.clone()) : new THREE.Vector3((Math.random() - 0.5) * 50, 0, (Math.random() - 0.5) * 50);
+    if (local.length() > 46) local.setLength(46);
+    spawnNova(local, 0.3, false);
+    miniFlash = 0.2; clickShake = 0.4;
+    spawnSparks(px, py);
+    if (soundOn && A.ready) {
+      A.boom(0.22, 1.1); A.crash(1.2, 0.12);
+      A.bell(P5[clamp(Math.floor((px / r.width) * 8), 0, 7)] + 12, { gain: 0.06, pan: clamp((px / r.width) * 2 - 1, -1, 1) * 0.8 });
+    }
+  }
+
+  /* Größe */
+  function resize() {
+    const w = Math.max(1, stage.clientWidth), h = Math.max(1, stage.clientHeight);
+    renderer.setSize(w, h, false);
+    cam.aspect = w / h; cam.updateProjectionMatrix();
+    warpCam.aspect = w / h; warpCam.updateProjectionMatrix();
+    fxD = Math.min(window.devicePixelRatio || 1, 2);
+    fxW = w; fxH = h;
+    fxc.width = Math.round(w * fxD); fxc.height = Math.round(h * fxD);
+  }
+  if ('ResizeObserver' in window) new ResizeObserver(resize).observe(stage); else window.addEventListener('resize', resize);
+  resize();
+  if ('IntersectionObserver' in window) new IntersectionObserver((es) => { inView = es[0].isIntersecting; applyLevel(); }).observe(stage);
+  document.addEventListener('visibilitychange', applyLevel);
+
+  /* ===================== Schleife ===================== */
+  let last = performance.now();
+  let freeze = false;
+  function frame(now) {
+    requestAnimationFrame(frame);
+    const dt = freeze ? 0 : Math.min(0.05, (now - last) / 1000);
+    last = now;
+    if (!inView) return;
+    const run = state === 'run';
+    if (run) T += dt;
+
+    /* Ereignisse */
+    if (run) {
+      const prev = lastT;
+      lastT = T;
+      for (const e of EV) {
+        if (e.t > prev && e.t <= T) {
+          if (e.vis) e.vis();
+          if (e.aud && soundOn && A.ready) e.aud();
+        }
+      }
+      let ci = 0;
+      for (let i = 0; i < CH.length; i++) if (T >= CH[i].t) ci = i;
+      if (ci !== chIdx) setChapter(ci);
+      if (T > CINE) {
+        if (T >= nextAmb) {
+          nextAmb = T + 0.9 + Math.random() * 1.5;
+          if (soundOn && A.ready) A.bell(P5[(Math.random() * 8) | 0] + 12 * ((Math.random() * 2) | 0), { pan: (Math.random() - 0.5) * 1.4, gain: 0.03, rev: 0.8 });
+        }
+        if (T >= nextMet && !reduce) {
+          nextMet = T + 4 + Math.random() * 4;
+          spawnMeteor();
+          if (soundOn && A.ready) A.whoosh(0.5, 0.05);
+        }
+      }
+    }
+
+    /* Zeit der Galaxie (dreht beim Auftauchen schneller, dann ruhiger) */
+    const boost = run && T >= 6 ? 1 + 6 * Math.exp(-(T - 6) * 0.45) : 1;
+    gTime += dt * boost * (reduce ? 0.3 : 1);
+    gUniforms.uTime.value = gTime;
+    bgUniforms.uTime.value = gTime;
+    bgStars.rotation.y = gTime * 0.004;
+
+    /* Flash */
+    let flash = 0;
+    if (run) {
+      if (T < 6) flash = smooth(5.5, 5.98, T);
+      else {
+        flash = 0.95 * Math.exp(-(T - 6) * 3);
+        if (T >= 27.75) flash = Math.max(flash, T < 28 ? smooth(27.75, 28, T) : Math.exp(-(T - 28) * 2.2));
+      }
+    }
+    miniFlash *= Math.exp(-dt * 3.5);
+    flash = Math.max(flash, miniFlash);
+    flashEl.style.opacity = flash.toFixed(3);
+    gUniforms.uFlash.value = flash * 0.8;
+
+    /* Nebel + Anker mitdrehen */
+    for (const n of nebula) {
+      const [x, z] = rotPos(n.x, n.z, n.r, gTime);
+      n.s.position.set(x, n.y, z);
+      n.s.material.rotation += n.spin * dt;
+    }
+    if (!bigDone) {
+      const [ax, az2] = rotPos(NX, NZ, NR, gTime);
+      anchor.position.set(ax, 0.4, az2);
+    }
+    const pI = run ? smooth(12, 28, T) : 0;
+    prog.visible = run && !bigDone && T >= 8;
+    progHalo.visible = prog.visible;
+    if (prog.visible) {
+      const pulse = 1 + 0.25 * Math.sin(T * (2 + 10 * pI));
+      const sz = (0.9 + 4.5 * pI) * pulse;
+      prog.scale.set(sz, sz, 1);
+      prog.material.opacity = 0.35 + 0.65 * pI;
+      const hz = (3 + 14 * pI) * pulse;
+      progHalo.scale.set(hz, hz, 1);
+      progHalo.material.opacity = 0.05 + 0.3 * pI;
+    }
+    const cb = 1 + (run && T >= 6 ? 0.9 * Math.exp(-(T - 6) * 2.5) : 0) + flash * 0.6;
+    coreGlow.scale.set(22 * cb, 22 * cb, 1);
+    coreHot.scale.set(6 * cb, 6 * cb, 1);
+    updateNovae(dt);
+
+    /* Hyperraum */
+    if (run && T < 6) {
+      const k = clamp(T / 6), k3 = k * k * k;
+      wUniforms.uOff.value += dt * (30 + 1400 * k3);
+      wUniforms.uLen.value = 3 + 150 * k3;
+      tunnel.scale.set(6 + 260 * k3 * k, 6 + 260 * k3 * k, 1);
+      tunnel.material.opacity = 0.9 * k3;
+    }
+
+    /* Kamera */
+    let p;
+    if (run && T >= 6) p = path(T);
+    else p = { r: 95, az: 0.3 + gTime * 0.04, el: 0.5 };
+    let { r, az, el } = p;
+    if (run && T >= 6) {
+      const w = smooth(19, 25, T) * (1 - smooth(30, 35, T));
+      if (w > 0) {
+        anchor.getWorldPosition(v3);
+        const target = Math.atan2(v3.x, v3.z) + 0.55;
+        const d = ((target - az + Math.PI) % TAU + TAU) % TAU - Math.PI;
+        az += d * w;
+        tgt.set(0, 0, 0).lerp(v3, 0.75 * w);
+      } else tgt.set(0, 0, 0);
+      if (T < CINE) { const dec = Math.exp(-dt * 0.6); dAz *= dec; dEl *= dec; }
+    } else tgt.set(0, 0, 0);
+    r *= zoom; az += dAz; el = clamp(el + dEl, 0.05, 1.4);
+    cam.position.set(r * Math.cos(el) * Math.sin(az), r * Math.sin(el), r * Math.cos(el) * Math.cos(az));
+    const amp = (run && T >= 28 && !reduce ? 1.3 * Math.exp(-(T - 28) * 2) * shake : 0) + clickShake;
+    clickShake *= Math.exp(-dt * 6);
+    if (amp > 0.01) cam.position.add(v3b.set((Math.random() - 0.5) * amp, (Math.random() - 0.5) * amp, (Math.random() - 0.5) * amp));
+    cam.lookAt(tgt);
+    gUniforms.uGain.value = 1.2 * clamp(cam.position.length() / 85, 0.42, 1);
+    const fov = 55 + (run && T >= 6 ? 35 * Math.exp(-(T - 6) * 3.2) : 0) + (run && T >= 28 ? 7 * Math.exp(-(T - 28) * 3) : 0);
+    if (Math.abs(fov - cam.fov) > 0.01) { cam.fov = fov; cam.updateProjectionMatrix(); }
+
+    renderer.clear();
+    if (run && T < 6) renderer.render(warpScene, warpCam);
+    else renderer.render(scene, cam);
+    drawFx(dt);
+  }
+  requestAnimationFrame(frame);
+
+  if (window.__GALAXY_DEBUG) {
+    window.__galaxy = {
+      seek(t) {
+        begin(false);
+        freeze = true;
+        T = t; lastT = t;
+        if (t >= 28) { explode(); novae[novae.length - 1].t = t - 28; }
+        let ci = 0;
+        for (let i = 0; i < CH.length; i++) if (t >= CH[i].t) ci = i;
+        setChapter(ci);
+      },
+      fireAll() {
+        const errs = [];
+        for (const e of EV) if (e.aud) { try { e.aud(); } catch (err) { errs.push(String(err)); } }
+        return errs;
+      },
+      tap(px, py) { tap({ clientX: glc.getBoundingClientRect().left + px, clientY: glc.getBoundingClientRect().top + py }); },
+    };
+  }
+})();
+</script>
+</body>
+</html>
